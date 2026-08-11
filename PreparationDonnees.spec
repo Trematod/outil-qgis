@@ -5,14 +5,20 @@ from PyInstaller.utils.hooks import collect_submodules
 
 project_root = Path(SPEC).parent
 
+template_files = [
+    (str(project_root / "app" / "templates" / "upload.html"), "app/templates"),
+    (str(project_root / "app" / "templates" / "result.html"), "app/templates"),
+]
+static_files = [
+    (str(project_root / "app" / "static" / "styles.css"), "app/static"),
+    (str(project_root / "app" / "static" / "app.js"), "app/static"),
+]
+
 a = Analysis(
     [str(project_root / "Partie1.py")],
     pathex=[str(project_root)],
     binaries=[],
-    datas=[
-        (str(project_root / "app" / "templates"), "app/templates"),
-        (str(project_root / "app" / "static"), "app/static"),
-    ],
+    datas=template_files + static_files,
     hiddenimports=collect_submodules("uvicorn"),
     hookspath=[],
     hooksconfig={},
@@ -26,8 +32,6 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
     name="PreparationDonnees",
     debug=False,
@@ -35,4 +39,14 @@ exe = EXE(
     strip=False,
     upx=False,
     console=True,
+    exclude_binaries=True,
+)
+
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=False,
+    name="PreparationDonnees",
 )
