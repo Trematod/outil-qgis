@@ -37,6 +37,23 @@ jobs:
         shell: pwsh
         run: python -m PyInstaller --clean --noconfirm PreparationDonnees.spec
 
+      - name: Trouver le bundle PyInstaller
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path dist -Filter PreparationDonnees.exe -File -Recurse | Select-Object -First 1
+          if ($null -eq $exe) {
+            Write-Host "PreparationDonnees.exe introuvable. Contenu de dist :"
+            if (Test-Path dist) {
+              Get-ChildItem -Path dist -Recurse -Force | Select-Object FullName, Length, Mode | Format-Table -AutoSize
+            } else {
+              Write-Host "Le dossier dist n'existe pas."
+            }
+            throw "PyInstaller n'a pas produit PreparationDonnees.exe."
+          }
+          $bundle = $exe.Directory.FullName
+          "BUNDLE_DIR=$bundle" >> $env:GITHUB_ENV
+          Write-Host "Bundle PyInstaller trouve : $bundle"
+
       - name: Assembler le dossier portable
         shell: pwsh
         run: |
@@ -44,7 +61,7 @@ jobs:
             Remove-Item distribution_windows -Recurse -Force
           }
           New-Item distribution_windows -ItemType Directory | Out-Null
-          Copy-Item dist/PreparationDonnees/* distribution_windows -Recurse -Force
+          Copy-Item "$env:BUNDLE_DIR\*" distribution_windows -Recurse -Force
           Copy-Item configuration.json distribution_windows/configuration.json -Force
           Copy-Item portable_start.bat distribution_windows/start.bat -Force
           Copy-Item portable_stop.bat distribution_windows/stop.bat -Force
@@ -57,16 +74,20 @@ jobs:
             "distribution_windows/PreparationDonnees.exe",
             "distribution_windows/configuration.json",
             "distribution_windows/start.bat",
-            "distribution_windows/stop.bat",
-            "distribution_windows/app/templates/upload.html",
-            "distribution_windows/app/templates/result.html",
-            "distribution_windows/app/static/styles.css",
-            "distribution_windows/app/static/app.js"
+            "distribution_windows/stop.bat"
           )
           foreach ($path in $required) {
             if (!(Test-Path $path)) {
               throw "Fichier requis absent : $path"
             }
+          }
+          $resourceFiles = @("upload.html", "result.html", "styles.css", "app.js")
+          foreach ($name in $resourceFiles) {
+            $resource = Get-ChildItem -Path distribution_windows -Filter $name -File -Recurse | Select-Object -First 1
+            if ($null -eq $resource) {
+              throw "Ressource requise absente du bundle : $name"
+            }
+            Write-Host "$name trouve : $($resource.FullName)"
           }
 
       - name: Creer le ZIP
