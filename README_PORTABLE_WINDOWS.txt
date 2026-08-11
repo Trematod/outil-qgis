@@ -5,7 +5,8 @@ PREPARATION DES DONNEES - VERSION PORTABLE WINDOWS
 3. Double-cliquez sur start.bat.
 4. Le navigateur s'ouvre sur http://127.0.0.1:8000.
 
-Pour arreter l'application, double-cliquez sur stop.bat.
+Pour arreter l'application, double-cliquez sur stop.bat. Seul le processus
+PreparationDonnees.exe est cible.
 
 Les chemins serveur restent configurables dans configuration.json.
 Ne supprimez pas les fichiers du dossier et ne lancez pas l'application depuis le ZIP.

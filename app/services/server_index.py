@@ -21,7 +21,11 @@ class ServerIndex:
     anomalies: tuple[dict[str, str], ...]
 
     def find(self, file_type: str, number: str) -> tuple[ServerFolder, ...]:
-        return self.folders.get((file_type, number), ())
+        normalized_type = _normalize_file_type(file_type)
+        normalized_number = normalize_case_number(number)
+        if not normalized_number.usable:
+            return ()
+        return self.folders.get((normalized_type, normalized_number.value), ())
 
 
 def build_server_index(roots: dict[str, Path]) -> ServerIndex:
@@ -30,10 +34,11 @@ def build_server_index(roots: dict[str, Path]) -> ServerIndex:
     anomalies: list[dict[str, str]] = []
 
     for file_type, root in roots.items():
+        normalized_type = _normalize_file_type(file_type)
         if not root.exists():
             anomalies.append(
                 {
-                    "type": file_type,
+                    "type": normalized_type,
                     "problème": "Racine serveur inaccessible",
                     "chemin": str(root),
                 }
@@ -45,7 +50,7 @@ def build_server_index(roots: dict[str, Path]) -> ServerIndex:
         except OSError as error:
             anomalies.append(
                 {
-                    "type": file_type,
+                    "type": normalized_type,
                     "problème": "Lecture de la racine serveur impossible",
                     "chemin": str(root),
                     "détail": str(error),
@@ -60,7 +65,7 @@ def build_server_index(roots: dict[str, Path]) -> ServerIndex:
             if len(parts) < 2:
                 anomalies.append(
                     {
-                        "type": file_type,
+                        "type": normalized_type,
                         "problème": "Nom de sous-dossier sans deuxième partie",
                         "chemin": str(child),
                     }
@@ -71,17 +76,21 @@ def build_server_index(roots: dict[str, Path]) -> ServerIndex:
             if not number.usable:
                 anomalies.append(
                     {
-                        "type": file_type,
+                        "type": normalized_type,
                         "problème": "Numéro de sous-dossier inexploitable",
                         "chemin": str(child),
                     }
                 )
                 continue
 
-            folder = ServerFolder(file_type, number.value, child.name, child)
-            indexed[(file_type, number.value)].append(folder)
+            folder = ServerFolder(normalized_type, number.value, child.name, child)
+            indexed[(normalized_type, number.value)].append(folder)
 
     return ServerIndex(
         folders={key: tuple(value) for key, value in indexed.items()},
         anomalies=tuple(anomalies),
     )
+
+
+def _normalize_file_type(value: str) -> str:
+    return str(value).strip().upper()

@@ -10,8 +10,5 @@ build/
 dist/
 .build-venv/
 .build-venv-linux/
-.build-venv/
-build/
-dist/
 *.zip
 .DS_Store
