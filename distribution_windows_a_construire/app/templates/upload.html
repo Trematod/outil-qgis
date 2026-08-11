@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Préparation des données</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+  <script src="{{ url_for('static', path='app.js') }}" defer></script>
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Partie 1 · préparation des données</p>
+    <h1>Préparer les données</h1>
+    <p class="intro">Sélectionnez le fichier Excel source pour commencer.</p>
+
+    <section class="panel" aria-labelledby="files-title">
+      <h2 id="files-title">Fichier Excel source</h2>
+      {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+      <p class="network-status">Accès serveur : {% for file_type, available in server_status.items() %}{{ file_type }} {% if available %}✓{% else %}indisponible{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+      <form action="/process" method="post" enctype="multipart/form-data">
+        <label class="file-slot">
+          <span>Sélectionner le fichier Excel</span>
+          <input type="file" name="source_file" accept=".xlsx" required>
+          <small id="selected-file">Aucun fichier sélectionné</small>
+        </label>
+        <button type="submit">Lancer le traitement</button>
+      </form>
+      <ol class="steps" aria-live="polite" hidden>
+        <li>Lecture du fichier</li>
+        <li>Vérification des colonnes</li>
+        <li>Préparation des données</li>
+        <li>Normalisation des numéros</li>
+        <li>Recherche des doublons</li>
+        <li>Indexation des dossiers serveur</li>
+        <li>Recherche des dossiers</li>
+        <li>Génération des fichiers</li>
+      </ol>
+    </section>
+  </main>
+</body>
+</html>

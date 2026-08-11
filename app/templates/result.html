@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Traitement terminé</title>
+  <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+</head>
+<body>
+  <main class="page">
+    <p class="eyebrow">Résultat</p>
+    <h1>Traitement terminé</h1>
+    <p class="intro">Fichier traité : {{ filename }}</p>
+    <section class="panel">
+      <dl class="summary">
+        <dt>Lignes analysées</dt><dd>{{ summary.lignes_analysees }}</dd>
+        <dt>Lignes conservées</dt><dd>{{ summary.lignes_conservees }}</dd>
+        <dt>Doublons</dt><dd>{{ summary.doublons }}</dd>
+        <dt>Dossiers trouvés</dt><dd>{{ summary.dossiers_trouves }}</dd>
+        <dt>Dossiers introuvables</dt><dd>{{ summary.dossiers_introuvables }}</dd>
+        <dt>Anomalies</dt><dd>{{ summary.anomalies }}</dd>
+      </dl>
+      <div class="downloads">
+        <a href="{{ downloads.excel }}">Télécharger le fichier Excel</a>
+        <a href="{{ downloads.rapport }}">Télécharger le rapport</a>
+        <a href="{{ downloads.csv }}">Télécharger le CSV QGIS</a>
+      </div>
+      <a class="back-link" href="/">Traiter d'autres fichiers</a>
+    </section>
+  </main>
+</body>
+</html>

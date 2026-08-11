@@ -1,0 +1,82 @@
+name: Build Windows portable
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout du projet
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-build.txt
+
+      - name: Installer les dependances
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt -r requirements-build.txt
+
+      - name: Executer les tests
+        shell: pwsh
+        run: python -m pytest -q
+
+      - name: Construire avec PyInstaller
+        shell: pwsh
+        run: python -m PyInstaller --clean --noconfirm PreparationDonnees.spec
+
+      - name: Assembler le dossier portable
+        shell: pwsh
+        run: |
+          if (Test-Path distribution_windows) {
+            Remove-Item distribution_windows -Recurse -Force
+          }
+          New-Item distribution_windows -ItemType Directory | Out-Null
+          Copy-Item dist/PreparationDonnees/* distribution_windows -Recurse -Force
+          Copy-Item configuration.json distribution_windows/configuration.json -Force
+          Copy-Item portable_start.bat distribution_windows/start.bat -Force
+          Copy-Item portable_stop.bat distribution_windows/stop.bat -Force
+          Copy-Item README_PORTABLE_WINDOWS.txt distribution_windows/README_UTILISATEUR.txt -Force
+
+      - name: Verifier le contenu du package
+        shell: pwsh
+        run: |
+          $required = @(
+            "distribution_windows/PreparationDonnees.exe",
+            "distribution_windows/configuration.json",
+            "distribution_windows/start.bat",
+            "distribution_windows/stop.bat",
+            "distribution_windows/app/templates/upload.html",
+            "distribution_windows/app/templates/result.html",
+            "distribution_windows/app/static/styles.css",
+            "distribution_windows/app/static/app.js"
+          )
+          foreach ($path in $required) {
+            if (!(Test-Path $path)) {
+              throw "Fichier requis absent : $path"
+            }
+          }
+
+      - name: Creer le ZIP
+        shell: pwsh
+        run: Compress-Archive -Path distribution_windows -DestinationPath distribution_windows.zip -Force
+
+      - name: Publier le ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution_windows
+          path: distribution_windows.zip
+          if-no-files-found: error
+          retention-days: 30

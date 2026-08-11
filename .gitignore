@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.env
+output/
+tmp/
+build/
+dist/
+.build-venv/
+.build-venv-linux/
+.build-venv/
+build/
+dist/
+*.zip
+.DS_Store
