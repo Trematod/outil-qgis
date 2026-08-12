@@ -11,7 +11,7 @@ from fastapi.templating import Jinja2Templates
 from app.config import SERVER_ROOTS, server_root_status
 from app.services.excel_reader import InputFileError
 from app.services.exports import export_results
-from app.services.processing import process_parent_file
+from app.services.processing import process_parent_file, process_parent_files
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -38,32 +38,43 @@ async def home(request: Request) -> HTMLResponse:
 @app.post("/process", response_class=HTMLResponse)
 async def process_upload(request: Request) -> HTMLResponse:
     form = await request.form()
-    upload = form.get("source_file")
+    uploads = form.getlist("source_file")
+    valid_uploads = [upload for upload in uploads if getattr(upload, "filename", "")]
 
-    if upload is None or not getattr(upload, "filename", ""):
+    if not valid_uploads:
         return templates.TemplateResponse(
             request=request,
             name="upload.html",
-                context={
-                    "error": "Sélectionnez un fichier Excel source.",
-                    "server_status": server_root_status(),
-                },
+            context={
+                "error": "Sélectionnez un fichier Excel source.",
+                "server_status": server_root_status(),
+            },
             status_code=400,
         )
 
     with TemporaryDirectory() as temporary_directory:
-        filename = Path(upload.filename).name
-        path = Path(temporary_directory) / filename
-        path.write_bytes(await upload.read())
+        saved_paths = []
+        for upload in valid_uploads:
+            filename = Path(upload.filename).name
+            path = Path(temporary_directory) / filename
+            counter = 1
+            while path.exists():
+                path = Path(temporary_directory) / f"{Path(filename).stem}_{counter}{Path(filename).suffix}"
+                counter += 1
+            path.write_bytes(await upload.read())
+            saved_paths.append(path)
+
         try:
-            dataframe, anomalies = process_parent_file(path, SERVER_ROOTS)
+            if len(saved_paths) == 1:
+                dataframe, anomalies = process_parent_file(saved_paths[0], SERVER_ROOTS)
+            else:
+                dataframe, anomalies = process_parent_files(saved_paths, SERVER_ROOTS)
         except InputFileError as error:
             return templates.TemplateResponse(
                 request=request,
                 name="upload.html",
                 context={
                     "error": str(error),
-                    "filename": upload.filename,
                     "server_status": server_root_status(),
                 },
                 status_code=400,
@@ -83,10 +94,11 @@ async def process_upload(request: Request) -> HTMLResponse:
         "anomalies": len(anomalies),
     }
     downloads = {key: f"/downloads/{path.name}" for key, path in paths.items()}
+    filenames = ", ".join(path.name for path in saved_paths)
     return templates.TemplateResponse(
         request=request,
         name="result.html",
-        context={"summary": summary, "downloads": downloads, "filename": upload.filename},
+        context={"summary": summary, "downloads": downloads, "filenames": filenames},
     )
 
 

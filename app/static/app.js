@@ -5,7 +5,15 @@ const steps = document.querySelector('.steps');
 
 if (fileInput && selectedFile) {
   fileInput.addEventListener('change', () => {
-    selectedFile.textContent = fileInput.files[0]?.name ?? 'Aucun fichier sélectionné';
+    const files = fileInput.files;
+    if (!files || files.length === 0) {
+      selectedFile.textContent = 'Aucun fichier sélectionné';
+      return;
+    }
+
+    selectedFile.textContent = files.length === 1
+      ? files[0].name
+      : `${files.length} fichiers sélectionnés`;
   });
 }
 

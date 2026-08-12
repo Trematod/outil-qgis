@@ -50,4 +50,45 @@ def test_process_accepts_one_parent_workbook() -> None:
 
     assert response.status_code == 200
     assert "Lignes analysées" in response.text
-    assert "Fichier traité : parent.xlsx" in response.text
+    assert "Fichier(s) traité(s)" in response.text
+    assert "parent.xlsx" in response.text
+
+
+def test_process_accepts_multiple_parent_workbooks() -> None:
+    workbook_a = BytesIO()
+    pd.DataFrame(
+        {
+            "Numéro de dossier": ["123"],
+            "Libellé": ["Projet A"],
+            "Comm.": ["Centre"],
+            "Référent SEE": ["A"],
+            "Type": ["AUTRE"],
+            "Délais SERMA": [1],
+        }
+    ).to_excel(workbook_a, index=False)
+
+    workbook_b = BytesIO()
+    pd.DataFrame(
+        {
+            "Numéro de dossier": ["456"],
+            "Libellé": ["Projet B"],
+            "Comm.": ["Nord"],
+            "Référent SEE": ["B"],
+            "Type": ["AUTRE"],
+            "Délais SERMA": [2],
+        }
+    ).to_excel(workbook_b, index=False)
+
+    response = client.post(
+        "/process",
+        files=[
+            ("source_file", ("parent_a.xlsx", workbook_a.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
+            ("source_file", ("parent_b.xlsx", workbook_b.getvalue(), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")),
+        ],
+    )
+
+    assert response.status_code == 200
+    assert "Lignes analysées" in response.text
+    assert "Fichier(s) traité(s)" in response.text
+    assert "parent_a.xlsx" in response.text
+    assert "parent_b.xlsx" in response.text

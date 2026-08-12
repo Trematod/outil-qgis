@@ -19,8 +19,8 @@
       <p class="network-status">Accès serveur : {% for file_type, available in server_status.items() %}{{ file_type }} {% if available %}✓{% else %}indisponible{% endif %}{% if not loop.last %} · {% endif %}{% endfor %}</p>
       <form action="/process" method="post" enctype="multipart/form-data">
         <label class="file-slot">
-          <span>Sélectionner le fichier Excel</span>
-          <input type="file" name="source_file" accept=".xlsx" required>
+          <span>Sélectionner un ou plusieurs fichiers Excel</span>
+          <input type="file" name="source_file" accept=".xlsx" required multiple>
           <small id="selected-file">Aucun fichier sélectionné</small>
         </label>
         <button type="submit">Lancer le traitement</button>

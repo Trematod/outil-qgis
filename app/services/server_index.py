@@ -20,12 +20,33 @@ class ServerIndex:
     folders: dict[tuple[str, str], tuple[ServerFolder, ...]]
     anomalies: tuple[dict[str, str], ...]
 
-    def find(self, file_type: str, number: str) -> tuple[ServerFolder, ...]:
+    def find(
+        self,
+        file_type: str,
+        number: str,
+        original_number: str | None = None,
+    ) -> tuple[ServerFolder, ...]:
         normalized_type = _normalize_file_type(file_type)
         normalized_number = normalize_case_number(number)
         if not normalized_number.usable:
             return ()
-        return self.folders.get((normalized_type, normalized_number.value), ())
+
+        matches: list[ServerFolder] = []
+        seen: set[Path] = set()
+        lookup_keys = [(normalized_type, normalized_number.value)]
+
+        if original_number is not None:
+            raw_original = str(original_number).strip()
+            if raw_original and raw_original != normalized_number.value:
+                lookup_keys.append((normalized_type, raw_original))
+
+        for key in lookup_keys:
+            for folder in self.folders.get(key, ()):  # type: ignore[arg-type]
+                if folder.path not in seen:
+                    seen.add(folder.path)
+                    matches.append(folder)
+
+        return tuple(matches)
 
 
 def build_server_index(roots: dict[str, Path]) -> ServerIndex:
@@ -85,6 +106,9 @@ def build_server_index(roots: dict[str, Path]) -> ServerIndex:
 
             folder = ServerFolder(normalized_type, number.value, child.name, child)
             indexed[(normalized_type, number.value)].append(folder)
+            raw_number = parts[1].strip()
+            if raw_number != number.value:
+                indexed[(normalized_type, raw_number)].append(folder)
 
     return ServerIndex(
         folders={key: tuple(value) for key, value in indexed.items()},

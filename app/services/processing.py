@@ -11,13 +11,28 @@ from app.services.normalization import normalize_case_number
 from app.services.server_index import ServerIndex, build_server_index
 
 
+def process_parent_files(
+    paths: list[Path],
+    server_roots: dict[str, Path],
+) -> tuple[pd.DataFrame, list[dict[str, object]]]:
+    """Read, normalize, deduplicate and match one or more parent workbooks."""
+    combined = pd.concat([read_excel_file(path) for path in paths], ignore_index=True)
+    return _process_combined_dataframe(combined, server_roots)
+
+
 def process_parent_file(
     path: Path,
     server_roots: dict[str, Path],
 ) -> tuple[pd.DataFrame, list[dict[str, object]]]:
     """Read, normalize, deduplicate and match one parent workbook."""
+    return process_parent_files([path], server_roots)
+
+
+def _process_combined_dataframe(
+    combined: pd.DataFrame,
+    server_roots: dict[str, Path],
+) -> tuple[pd.DataFrame, list[dict[str, object]]]:
     anomalies: list[dict[str, object]] = []
-    combined = read_excel_file(path)
     combined["Numéro original"] = combined["Numéro de dossier"]
     normalized = combined["Numéro original"].map(normalize_case_number)
     combined["NO"] = normalized.map(lambda item: item.value)
