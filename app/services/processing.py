@@ -66,9 +66,14 @@ def _process_combined_dataframe(
                 }
             )
 
+    _report_unknown_types(combined, anomalies)
+    supported_mask = combined["Type"].notna() & combined["Type"].astype(str).isin(
+        SUPPORTED_TYPES
+    )
+    combined = combined.loc[supported_mask].copy().reset_index(drop=True)
+
     combined, duplicate_anomalies = mark_duplicates(combined)
     anomalies.extend(duplicate_anomalies)
-    _report_unknown_types(combined, anomalies)
     server_index = build_server_index(server_roots)
     anomalies.extend(server_index.anomalies)
     _match_server_folders(combined, server_index, anomalies)
@@ -92,7 +97,7 @@ def _report_unknown_types(
                     "type": "" if pd.isna(file_type) else file_type,
                     "fichier source": row["__fichier_source"],
                     "ligne source": row["__ligne_source"],
-                    "action": "Ligne conservée sans recherche serveur",
+                    "action": "Ligne exclue des données nettoyées",
                 }
             )
 

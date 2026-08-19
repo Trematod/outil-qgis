@@ -69,7 +69,7 @@ def test_processing_accepts_multiple_workbooks(tmp_path: Path) -> None:
     assert any(item["problème"] == "Dossier introuvable" for item in anomalies)
 
 
-def test_unknown_type_is_kept_and_reported(tmp_path: Path) -> None:
+def test_unknown_type_is_excluded_and_reported(tmp_path: Path) -> None:
     workbook = tmp_path / "parent.xlsx"
     pd.DataFrame(
         {
@@ -84,6 +84,38 @@ def test_unknown_type_is_kept_and_reported(tmp_path: Path) -> None:
 
     dataframe, anomalies = process_parent_file(workbook, {})
 
+    assert dataframe.empty
+    assert any(
+        item["problème"] == "Type inconnu"
+        and item["type"] == "AUTRE"
+        and item["action"] == "Ligne exclue des données nettoyées"
+        for item in anomalies
+    )
+
+
+def test_unknown_type_is_excluded_before_duplicate_detection(tmp_path: Path) -> None:
+    workbook = tmp_path / "parent.xlsx"
+    pd.DataFrame(
+        {
+            "Numéro de dossier": ["123456", "123456"],
+            "Libellé": ["Projet PAP", "Projet DD"],
+            "Comm.": ["Centre", "Centre"],
+            "Référent SEE": ["A", "B"],
+            "Type": ["PAP", "DD"],
+            "Délais SERMA": [1, 2],
+        }
+    ).to_excel(workbook, index=False)
+    root = tmp_path / "DD_root"
+    root.mkdir()
+
+    dataframe, anomalies = process_parent_file(workbook, {"DD": root})
+
     assert len(dataframe) == 1
-    assert dataframe.loc[0, "Chemin"] == ""
-    assert any(item["problème"] == "Type inconnu" for item in anomalies)
+    assert dataframe.loc[0, "Type"] == "DD"
+    assert dataframe.loc[0, "NO"] == "123456"
+    assert dataframe.loc[0, "__statut"] != "Doublon supprimé"
+    assert any(
+        item["problème"] == "Type inconnu" and item["type"] == "PAP"
+        for item in anomalies
+    )
+    assert not any(item["problème"] == "Doublon" for item in anomalies)
