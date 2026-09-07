@@ -119,3 +119,34 @@ def test_unknown_type_is_excluded_before_duplicate_detection(tmp_path: Path) -> 
         for item in anomalies
     )
     assert not any(item["problème"] == "Doublon" for item in anomalies)
+
+
+def test_pe_and_pdzdam_are_kept_and_matched(tmp_path: Path) -> None:
+    workbook = tmp_path / "parent.xlsx"
+    pd.DataFrame(
+        {
+            "Numéro de dossier": ["100", "200"],
+            "Libellé": ["Projet PE", "Projet PDZDAM"],
+            "Comm.": ["Centre", "Nord"],
+            "Référent SEE": ["A", "B"],
+            "Type": ["PE", "PDZDAM"],
+            "Délais SERMA": [1, 2],
+        }
+    ).to_excel(workbook, index=False)
+    pe_root = tmp_path / "PE_root"
+    pdzdam_root = tmp_path / "PDZDAM_root"
+    pe_root.mkdir()
+    pdzdam_root.mkdir()
+    pe_folder = pe_root / "PE 100 Projet"
+    pdzdam_folder = pdzdam_root / "PDZDAM 200 Projet"
+    pe_folder.mkdir()
+    pdzdam_folder.mkdir()
+
+    dataframe, anomalies = process_parent_file(
+        workbook,
+        {"PE": pe_root, "PDZDAM": pdzdam_root},
+    )
+
+    assert dataframe["Type"].tolist() == ["PE", "PDZDAM"]
+    assert dataframe["Chemin"].tolist() == [str(pe_folder), str(pdzdam_folder)]
+    assert not any(item["problème"] == "Type inconnu" for item in anomalies)

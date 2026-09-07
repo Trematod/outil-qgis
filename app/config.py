@@ -6,7 +6,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-SUPPORTED_TYPES = ("DD", "PLQ", "MZ", "RAE", "PDZI", "PS")
+SUPPORTED_TYPES = ("DD", "PLQ", "MZ", "RAE", "PDZI", "PS", "PE", "PDZDAM")
 REQUIRED_COLUMNS = (
     "Numéro de dossier",
     "Libellé",
@@ -23,6 +23,8 @@ DEFAULT_SERVER_ROOTS = {
     "RAE": Path(r"S:\UO5196\50\_SERMA\04\_SECTEUR\_EE\02\_EVAL\_ENVIRO\RAE"),
     "PDZI": Path(r"S:\UO5196\50\_SERMA\04\_SECTEUR\_EE\02\_EVAL\_ENVIRO\PDZI"),
     "PS": Path(r"S:\UO5196\50\_SERMA\04\_SECTEUR\_EE\02\_EVAL\_ENVIRO\PS"),
+    "PE": Path(r"S:\UO5196\50\_SERMA\04\_SECTEUR\_EE\02\_EVAL\_ENVIRO\PE"),
+    "PDZDAM": Path(r"S:\UO5196\50\_SERMA\04\_SECTEUR\_EE\02\_EVAL\_ENVIRO\PDZDAM"),
 }
 
 
